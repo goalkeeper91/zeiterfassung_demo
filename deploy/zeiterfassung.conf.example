@@ -1,0 +1,57 @@
+# zeiterfassung.goalkeeper91.de - Zeiterfassung Dashboard (Demo)
+#
+# Gehört in den nginx-Ordner des Shared-Reverse-Proxy-Repos (bei uns:
+# D:\Entwicklung\git\demo\nginx\zeiterfassung.conf), NICHT in dieses Repo
+# hinein deployed. Siehe DEPLOYMENT.md für den vollständigen Ablauf,
+# insbesondere die Reihenfolge (erst nur der :80-Block, dann Zertifikat,
+# dann der :443-Block) - alles auf einmal zu laden bevor das Zertifikat
+# existiert, lässt den EINEN geteilten nginx-Container für ALLE Tenants
+# (goalkeeper91.de, n8n, punishersgermany.de, vault, ...) beim Reload
+# fehlschlagen.
+
+# HTTP -> HTTPS Redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name zeiterfassung.goalkeeper91.de;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS Zeiterfassung Dashboard
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name zeiterfassung.goalkeeper91.de;
+
+    ssl_certificate /etc/nginx/certs/live/zeiterfassung.goalkeeper91.de/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/live/zeiterfassung.goalkeeper91.de/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # Demo-/Portfolio-Projekt, nicht öffentlich - nur wer die Zugangsdaten
+    # hat, soll die Seite überhaupt sehen. Siehe DEPLOYMENT.md für die
+    # htpasswd-Erzeugung.
+    auth_basic "Zeiterfassung Demo";
+    auth_basic_user_file /etc/nginx/htpasswd/zeiterfassung;
+
+    location / {
+        proxy_pass http://zeiterfassung:80;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

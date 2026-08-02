@@ -1,0 +1,20 @@
+# Produktions-Setup: ein einzelner Container liefert die gebaute SPA aus.
+# Kein eigenes HTTPS/Routing hier - das übernimmt der bereits laufende
+# Shared-Reverse-Proxy des Zielservers (siehe DEPLOYMENT.md), genau wie beim
+# PunishersGer-Repo. Dieser Service hängt sich nur per externem Docker-
+# Netzwerk an, damit der Proxy ihn per Servicename erreichen kann - kein
+# Port wird auf den Host veröffentlicht.
+services:
+  zeiterfassung:
+    build: .
+    container_name: zeiterfassung_dashboard
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - shared
+
+networks:
+  shared:
+    name: ${SHARED_NETWORK_NAME:-goalkeeper_prod_network}
+    external: true
