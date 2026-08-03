@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: {}
 
 jobs:
   build-and-test:
@@ -26,10 +27,10 @@ jobs:
   deploy:
     name: Deploy to goalkeeper91.de
     needs: build-and-test
-    # Nur auf echte Pushes nach main deployen, nie auf PRs - ein PR aus einem
-    # Fork hätte sonst Zugriff auf die Deploy-Secrets, wenn der Workflow auch
-    # bei pull_request laufen würde.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Nur auf echte Pushes nach main (oder manuell per workflow_dispatch)
+    # deployen, nie auf PRs - ein PR aus einem Fork hätte sonst Zugriff auf
+    # die Deploy-Secrets, wenn der Workflow auch bei pull_request liefe.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: SSH deploy (git pull + docker compose up --build)
@@ -41,6 +42,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_PATH }}
+            cd "${{ secrets.DEPLOY_PATH }}"
             git pull --ff-only
             docker compose up -d --build
