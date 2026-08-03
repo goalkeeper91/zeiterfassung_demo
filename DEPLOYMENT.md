@@ -120,6 +120,9 @@ docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
 
 ## Updates ausrollen
 
+Läuft nach dem Einrichten von CI/CD (siehe unten) automatisch bei jedem Push
+auf `main`. Manuell/als Fallback weiterhin möglich:
+
 ```bash
 git pull
 docker compose up -d --build
@@ -127,3 +130,38 @@ docker compose up -d --build
 
 Kein Proxy-Reload nötig — nur dieser eine Container wird neu gebaut, das
 nginx-Routing bleibt unverändert.
+
+## CI/CD
+
+[`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) baut bei
+jedem Push/PR zunächst Lint + Typecheck + Build (schneller Fehlschlag, bevor
+überhaupt ein Deploy versucht wird), und deployt bei einem Push auf `main`
+zusätzlich per SSH auf den Server: `git pull --ff-only && docker compose up
+-d --build` — genau der manuelle Befehl von oben, nur automatisiert. Läuft
+nie bei Pull Requests (auch nicht von `main` selbst), damit ein PR aus einem
+Fork keinen Zugriff auf die Deploy-Secrets bekommt.
+
+**Voraussetzung:** Schritte 1–6 oben (DNS, nginx-Config, Zertifikat, initialer
+`git clone` + `docker compose up -d --build` auf dem Server) müssen einmalig
+manuell erledigt sein — CI/CD übernimmt nur die Updates danach, nicht die
+Erstinstallation.
+
+**Benötigte Secrets** (GitHub → Repo → Settings → Secrets and variables →
+Actions → "New repository secret", oder per `gh secret set NAME` — beides
+fragt den Wert interaktiv ab bzw. liest ihn aus einer Datei, sodass er nie im
+Klartext im Chat oder in der Shell-History landet):
+
+| Secret | Bedeutung |
+|---|---|
+| `DEPLOY_HOST` | Server-IP oder Hostname |
+| `DEPLOY_USER` | SSH-Benutzer auf dem Server |
+| `DEPLOY_SSH_KEY` | Privater SSH-Schlüssel (PEM), dessen öffentliches Gegenstück in `~/.ssh/authorized_keys` des `DEPLOY_USER` auf dem Server steht — am besten ein **eigenes** Deploy-Key-Paar erzeugen (`ssh-keygen -t ed25519 -f deploy_key -N ""`), nicht den privaten Haupt-Schlüssel wiederverwenden |
+| `DEPLOY_PATH` | Absoluter Pfad des Checkouts auf dem Server, z. B. `/home/<user>/zeiterfassung-dashboard` |
+| `DEPLOY_PORT` | SSH-Port, optional (Default `22`) |
+
+```bash
+gh secret set DEPLOY_HOST
+gh secret set DEPLOY_USER
+gh secret set DEPLOY_SSH_KEY < deploy_key   # privater Schlüssel aus einer Datei, nie inline einfügen
+gh secret set DEPLOY_PATH
+```
