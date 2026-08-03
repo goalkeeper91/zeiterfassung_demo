@@ -1,7 +1,8 @@
-// Bremst Brute-Force-Rateversuche am Kiosk-Tablet aus. Bewusst simpel und
-// geräteweit (nicht pro Mitarbeiter) gehalten, weil das Terminal vor der
-// PIN-Eingabe noch nicht weiß, wer da tippt. Persistiert in localStorage,
-// damit ein Reload den Sperr-Timer nicht einfach umgeht.
+// Bremst Brute-Force-Rateversuche am Terminal aus. Seit die Mitarbeiterwahl
+// der PIN-Eingabe vorgeschaltet ist (siehe TerminalPage), weiß das Terminal
+// schon, wer es versucht — die Sperre läuft daher pro Mitarbeiter, nicht
+// mehr geräteweit. Persistiert in localStorage, damit ein Reload den
+// Sperr-Timer nicht einfach umgeht.
 
 const STORAGE_KEY = 'zeiterfassung.lockout'
 export const MAX_ATTEMPTS = 5
@@ -12,22 +13,25 @@ interface LockoutState {
   lockedUntil: string | null
 }
 
-function loadState(): LockoutState {
+type LockoutMap = Record<string, LockoutState>
+
+function loadMap(): LockoutMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { failedAttempts: 0, lockedUntil: null }
+    if (!raw) return {}
     const parsed = JSON.parse(raw)
-    return {
-      failedAttempts: typeof parsed.failedAttempts === 'number' ? parsed.failedAttempts : 0,
-      lockedUntil: typeof parsed.lockedUntil === 'string' ? parsed.lockedUntil : null,
-    }
+    return parsed && typeof parsed === 'object' ? parsed : {}
   } catch {
-    return { failedAttempts: 0, lockedUntil: null }
+    return {}
   }
 }
 
-function saveState(state: LockoutState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+function saveMap(map: LockoutMap): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
+}
+
+function getState(map: LockoutMap, employeeId: string): LockoutState {
+  return map[employeeId] ?? { failedAttempts: 0, lockedUntil: null }
 }
 
 export interface LockoutStatus {
@@ -36,8 +40,9 @@ export interface LockoutStatus {
   failedAttempts: number
 }
 
-export function getLockoutStatus(now = new Date()): LockoutStatus {
-  const state = loadState()
+export function getLockoutStatus(employeeId: string, now = new Date()): LockoutStatus {
+  const map = loadMap()
+  const state = getState(map, employeeId)
   const remainingMs = state.lockedUntil
     ? new Date(state.lockedUntil).getTime() - now.getTime()
     : 0
@@ -46,25 +51,30 @@ export function getLockoutStatus(now = new Date()): LockoutStatus {
     // Eine abgelaufene Sperre gibt einen vollständig frischen Satz an
     // Versuchen frei, statt den Zähler auf dem Maximum stehen zu lassen.
     if (state.lockedUntil) {
-      saveState({ failedAttempts: 0, lockedUntil: null })
+      map[employeeId] = { failedAttempts: 0, lockedUntil: null }
+      saveMap(map)
     }
     return { isLocked: false, remainingMs: 0, failedAttempts: 0 }
   }
   return { isLocked: true, remainingMs, failedAttempts: state.failedAttempts }
 }
 
-export function registerFailedAttempt(now = new Date()): LockoutStatus {
-  const state = loadState()
+export function registerFailedAttempt(employeeId: string, now = new Date()): LockoutStatus {
+  const map = loadMap()
+  const state = getState(map, employeeId)
   const failedAttempts = state.failedAttempts + 1
   const lockedUntil =
     failedAttempts >= MAX_ATTEMPTS
       ? new Date(now.getTime() + LOCKOUT_DURATION_MS).toISOString()
       : state.lockedUntil
 
-  saveState({ failedAttempts, lockedUntil })
-  return getLockoutStatus(now)
+  map[employeeId] = { failedAttempts, lockedUntil }
+  saveMap(map)
+  return getLockoutStatus(employeeId, now)
 }
 
-export function registerSuccessfulPin(): void {
-  saveState({ failedAttempts: 0, lockedUntil: null })
+export function registerSuccessfulPin(employeeId: string): void {
+  const map = loadMap()
+  map[employeeId] = { failedAttempts: 0, lockedUntil: null }
+  saveMap(map)
 }

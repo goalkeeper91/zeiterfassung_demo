@@ -4,6 +4,7 @@
 // nie die konkrete Datenquelle dahinter.
 
 export interface Employee {
+  id: string
   pin: string
   name: string
 }
@@ -13,7 +14,7 @@ export type ShiftStatus = 'not_started' | 'working' | 'on_break' | 'finished'
 
 export interface Punch {
   id: string
-  employeePin: string
+  employeeId: string
   type: PunchType
   timestamp: string
 }
@@ -26,14 +27,20 @@ export interface DailyEmployeeSummary {
 }
 
 export interface TimeTrackingProvider {
-  /** Sucht den Mitarbeiter zu einer eingegebenen PIN. */
-  findEmployeeByPin(pin: string): Promise<Employee | undefined>
+  /** Für dieses Terminal hinterlegte Mitarbeiter (zur Auswahl vor der PIN-Eingabe). */
+  getEmployees(): Promise<Employee[]>
+  /** Prüft die eingegebene PIN gegen den zuvor ausgewählten Mitarbeiter. */
+  verifyPin(employeeId: string, pin: string): Promise<boolean>
+  /** Setzt eine neue PIN für den Mitarbeiter (Selbstverwaltung nach dem Einloggen). */
+  changePin(employeeId: string, newPin: string): Promise<void>
   /** Aktueller Schichtstatus, abgeleitet aus den bisherigen Punches des Tages. */
-  getShiftStatus(employeePin: string): Promise<ShiftStatus>
+  getShiftStatus(employeeId: string): Promise<ShiftStatus>
   /** Welche Punch-Typen im aktuellen Status als Nächstes erlaubt sind. */
-  getAllowedPunchTypes(employeePin: string): Promise<PunchType[]>
+  getAllowedPunchTypes(employeeId: string): Promise<PunchType[]>
+  /** Bisherige Punches des Mitarbeiters für den heutigen Tag. */
+  getTodaysPunches(employeeId: string): Promise<Punch[]>
   /** Erfasst einen Punch. Wirft, wenn der Typ im aktuellen Status nicht erlaubt ist. */
-  recordPunch(employeePin: string, type: PunchType): Promise<Punch>
+  recordPunch(employeeId: string, type: PunchType): Promise<Punch>
   /** Tagesübersicht aller Mitarbeiter fürs Admin-Dashboard. */
   getDailyOverview(): Promise<DailyEmployeeSummary[]>
 }

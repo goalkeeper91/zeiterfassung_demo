@@ -1,15 +1,15 @@
 // Phase-3-Implementierung des TimeTrackingProvider-Interfaces auf Basis
-// lokaler Mock-Daten. Die eigentliche Logik steckt in data/mockEmployees.ts
+// lokaler Mock-Daten. Die eigentliche Logik steckt in data/employeeStore.ts
 // und data/timeTrackingStore.ts — dieser Provider bildet sie nur auf die
 // (absichtlich asynchrone) Schnittstelle ab, die ein späterer BlinkProvider
 // mit echten HTTP-Aufrufen genauso bedienen wird.
 
-import { findEmployeeByPin, mockEmployees } from '../data/mockEmployees'
+import { getEmployeeById, getEmployees, setEmployeePin } from '../data/employeeStore'
 import {
   calculateWorkedMs,
   getAllowedPunchTypes as getAllowedPunchTypesForStatus,
   getShiftStatus as getShiftStatusFromStore,
-  getTodaysPunches,
+  getTodaysPunches as getTodaysPunchesFromStore,
   recordPunch as recordPunchInStore,
 } from '../data/timeTrackingStore'
 import type {
@@ -22,30 +22,43 @@ import type {
 } from './types'
 
 export class LocalMockProvider implements TimeTrackingProvider {
-  async findEmployeeByPin(pin: string): Promise<Employee | undefined> {
-    return findEmployeeByPin(pin)
+  async getEmployees(): Promise<Employee[]> {
+    return getEmployees()
   }
 
-  async getShiftStatus(employeePin: string): Promise<ShiftStatus> {
-    return getShiftStatusFromStore(employeePin)
+  async verifyPin(employeeId: string, pin: string): Promise<boolean> {
+    const employee = getEmployeeById(employeeId)
+    return employee?.pin === pin
   }
 
-  async getAllowedPunchTypes(employeePin: string): Promise<PunchType[]> {
-    const status = getShiftStatusFromStore(employeePin)
+  async changePin(employeeId: string, newPin: string): Promise<void> {
+    setEmployeePin(employeeId, newPin)
+  }
+
+  async getShiftStatus(employeeId: string): Promise<ShiftStatus> {
+    return getShiftStatusFromStore(employeeId)
+  }
+
+  async getAllowedPunchTypes(employeeId: string): Promise<PunchType[]> {
+    const status = getShiftStatusFromStore(employeeId)
     return getAllowedPunchTypesForStatus(status)
   }
 
-  async recordPunch(employeePin: string, type: PunchType): Promise<Punch> {
-    return recordPunchInStore(employeePin, type)
+  async getTodaysPunches(employeeId: string): Promise<Punch[]> {
+    return getTodaysPunchesFromStore(employeeId)
+  }
+
+  async recordPunch(employeeId: string, type: PunchType): Promise<Punch> {
+    return recordPunchInStore(employeeId, type)
   }
 
   async getDailyOverview(): Promise<DailyEmployeeSummary[]> {
     const now = new Date()
-    return mockEmployees.map((employee) => {
-      const punches = getTodaysPunches(employee.pin, now)
+    return getEmployees().map((employee) => {
+      const punches = getTodaysPunchesFromStore(employee.id, now)
       return {
         employee,
-        status: getShiftStatusFromStore(employee.pin, now),
+        status: getShiftStatusFromStore(employee.id, now),
         punches,
         workedMs: calculateWorkedMs(punches, now),
       }

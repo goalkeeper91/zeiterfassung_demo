@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Verbindungsstatus fürs Kiosk-UI. Aktuell rein informativ (die
+ * Verbindungsstatus fürs Terminal-UI. Aktuell rein informativ (die
  * Mock-Datenhaltung läuft ohnehin lokal), legt aber die Anzeige-Fläche für
  * die echte Offline-Queue an, sobald in Phase 4/5 tatsächlich gegen die
  * Blink-API synchronisiert wird.

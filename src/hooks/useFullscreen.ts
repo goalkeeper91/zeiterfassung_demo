@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /**
- * Fullscreen-Toggle für den Kiosk-Modus. Ein echtes Kiosk-Tablet würde den
- * Browser ohnehin mit `--kiosk` im Vollbild starten — für die Demo im
+ * Fullscreen-Toggle für den Terminal-Modus. Ein echtes Terminal-Tablet würde
+ * den Browser ohnehin mit Chromes `--kiosk`-Flag im Vollbild starten — für die Demo im
  * normalen Browserfenster braucht es diesen manuellen Schalter, weil die
  * Fullscreen API nur auf eine echte Nutzer-Interaktion hin reagiert.
  */

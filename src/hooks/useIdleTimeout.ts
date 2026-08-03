@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react'
 /**
  * Ruft `onIdle` auf, wenn für `timeoutMs` keine der überwachten
  * Interaktionen (Touch/Maus/Tastatur) stattgefunden hat. Für den
- * Kiosk-Modus: Rückkehr zum PIN-Screen, wenn ein Mitarbeiter den
- * Vorgang nicht abschließt.
+ * Terminal-Modus: Rückkehr zur Mitarbeiterauswahl, wenn eine Session
+ * nicht abgeschlossen wird.
  */
 export function useIdleTimeout(onIdle: () => void, timeoutMs: number) {
   const onIdleRef = useRef(onIdle)

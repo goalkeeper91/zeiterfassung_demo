@@ -38,14 +38,14 @@ function saveAllPunches(punches: Punch[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(punches))
 }
 
-export function getTodaysPunches(employeePin: string, now = new Date()): Punch[] {
+export function getTodaysPunches(employeeId: string, now = new Date()): Punch[] {
   return loadAllPunches()
-    .filter((punch) => punch.employeePin === employeePin && isSameDay(punch.timestamp, now))
+    .filter((punch) => punch.employeeId === employeeId && isSameDay(punch.timestamp, now))
     .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 }
 
-export function getShiftStatus(employeePin: string, now = new Date()): ShiftStatus {
-  const todaysPunches = getTodaysPunches(employeePin, now)
+export function getShiftStatus(employeeId: string, now = new Date()): ShiftStatus {
+  const todaysPunches = getTodaysPunches(employeeId, now)
   const last = todaysPunches.at(-1)
   if (!last) return 'not_started'
 
@@ -91,15 +91,15 @@ export function calculateWorkedMs(punches: Punch[], now = new Date()): number {
   return totalMs
 }
 
-export function recordPunch(employeePin: string, type: PunchType, now = new Date()): Punch {
-  const status = getShiftStatus(employeePin, now)
+export function recordPunch(employeeId: string, type: PunchType, now = new Date()): Punch {
+  const status = getShiftStatus(employeeId, now)
   if (!ALLOWED_NEXT[status].includes(type)) {
     throw new Error(`Punch "${type}" ist im Status "${status}" nicht erlaubt.`)
   }
 
   const punch: Punch = {
     id: crypto.randomUUID(),
-    employeePin,
+    employeeId,
     type,
     timestamp: now.toISOString(),
   }

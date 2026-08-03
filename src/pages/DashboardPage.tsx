@@ -26,8 +26,8 @@ export function DashboardPage() {
   }, [reload])
 
   // localStorage feuert `storage` nur in anderen Tabs/Fenstern — genau das
-  // Szenario, in dem das Kiosk-Tablet in einem Tab läuft und dieses
-  // Dashboard daneben zur Präsentation offen ist.
+  // Szenario, in dem das Terminal in einem Tab läuft und dieses Dashboard
+  // daneben zur Präsentation offen ist.
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
       if (event.key === null || event.key === STORAGE_KEY) reload()
@@ -46,7 +46,7 @@ export function DashboardPage() {
           <p className="text-sm text-slate-500">{TODAY_LABEL}</p>
         </div>
         <Link to="/" className="text-sm text-slate-500 active:text-slate-700">
-          Zurück zum Kiosk
+          Zurück zum Terminal
         </Link>
       </header>
 
@@ -56,7 +56,7 @@ export function DashboardPage() {
         <div className="flex flex-col gap-3">
           {overview.map(({ employee, status, punches, workedMs }) => (
             <div
-              key={employee.pin}
+              key={employee.id}
               className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
             >
               <div className="flex items-center justify-between gap-3">

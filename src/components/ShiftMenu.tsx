@@ -1,14 +1,25 @@
-import { getPunchLabel, type Employee, type PunchType } from '../providers/types'
+import { getPunchLabel, type Employee, type Punch, type PunchType } from '../providers/types'
+import { formatTime } from '../lib/format'
 
 interface ShiftMenuProps {
   employee: Employee
   allowedPunchTypes: PunchType[]
+  todaysPunches: Punch[]
   onSelect: (type: PunchType) => void
+  onChangePin: () => void
+  onBack: () => void
 }
 
-export function ShiftMenu({ employee, allowedPunchTypes, onSelect }: ShiftMenuProps) {
+export function ShiftMenu({
+  employee,
+  allowedPunchTypes,
+  todaysPunches,
+  onSelect,
+  onChangePin,
+  onBack,
+}: ShiftMenuProps) {
   return (
-    <div className="text-center">
+    <div className="w-full max-w-xs text-center">
       <h1 className="text-3xl font-semibold text-slate-900">
         Hallo, {employee.name.split(' ')[0]}
       </h1>
@@ -29,6 +40,32 @@ export function ShiftMenu({ employee, allowedPunchTypes, onSelect }: ShiftMenuPr
             {getPunchLabel(type)}
           </button>
         ))}
+      </div>
+
+      {todaysPunches.length > 0 && (
+        <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-left">
+          <p className="mb-2 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            Heute
+          </p>
+          <p className="text-sm text-slate-600">
+            {todaysPunches
+              .map((punch) => `${getPunchLabel(punch.type)} ${formatTime(punch.timestamp)}`)
+              .join(' · ')}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-6 flex justify-center gap-6 text-sm">
+        <button
+          type="button"
+          onClick={onChangePin}
+          className="text-slate-400 active:text-slate-600"
+        >
+          PIN ändern
+        </button>
+        <button type="button" onClick={onBack} className="text-slate-400 active:text-slate-600">
+          Zurück
+        </button>
       </div>
     </div>
   )
