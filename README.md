@@ -7,9 +7,11 @@ Gebaut als Demo-/Portfolio-Projekt, um Softwareentwicklung an einem
 konkreten, realistischen Use Case zu zeigen, nicht als fertiges Produkt für
 den Produktivbetrieb.
 
-> Screenshots/GIF vom Terminal-Flow und Dashboard folgen hier, sobald sie
-> erzeugt sind — der aktuelle Stand ist per `npm run dev` oder Docker-Build
-> selbst durchklickbar (siehe unten).
+> **Live-Demo:** https://zeiterfassung.goalkeeper91.de (per HTTP-Basic-Auth
+> geschützt — Zugangsdaten auf Anfrage). Screenshots/GIF vom Terminal-Flow
+> und Dashboard folgen hier noch — bis dahin ist der aktuelle Stand per
+> `npm run dev` oder Docker-Build auch lokal selbst durchklickbar (siehe
+> unten).
 
 ## Die Idee
 
